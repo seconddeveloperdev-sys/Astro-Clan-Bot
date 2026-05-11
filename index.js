@@ -301,8 +301,8 @@ client.on('interactionCreate', async (interaction) => {
       if (!league) {
         return interaction.reply({ content: `No league found with ID \`${leagueId}\`.`, ephemeral: true });
       }
-      if (!league.active) {
-        return interaction.reply({ content: `League \`${leagueId}\` is already closed.`, ephemeral: true });
+      if (league.cancelled) {
+        return interaction.reply({ content: `League \`${leagueId}\` has already been cancelled.`, ephemeral: true });
       }
 
       await interaction.deferReply();
@@ -322,7 +322,8 @@ client.on('interactionCreate', async (interaction) => {
         await msg.delete();
       } catch (_) {}
 
-      league.active = false;
+      league.active    = false;
+      league.cancelled = true;
       db.leagues[leagueId] = league;
       writeDB(db);
 
