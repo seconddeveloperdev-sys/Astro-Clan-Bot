@@ -14,9 +14,8 @@ const fs = require('fs');
 const path = require('path');
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const TOKEN           = process.env.DISCORD_TOKEN;
-const CLIENT_ID       = process.env.CLIENT_ID;
-const GUILD_ID        = process.env.GUILD_ID;
+const TOKEN    = process.env.DISCORD_TOKEN;
+const GUILD_ID = process.env.GUILD_ID;
 
 const LEAGUE_CHANNEL_ID    = '1498804106628956211'; // #league-host
 const LEAGUE_HOST_ROLE_ID  = '1459877884645740846'; // League Host role
@@ -178,15 +177,19 @@ const client = new Client({
 client.once('ready', async () => {
   console.log(`Ready — logged in as ${client.user.tag}`);
 
-  if (!CLIENT_ID || !GUILD_ID) {
-    console.warn('CLIENT_ID or GUILD_ID not set — skipping command registration.');
-    return;
-  }
+  const appId = client.application.id;
+  const rest  = new REST({ version: '10' }).setToken(TOKEN);
 
-  const rest = new REST({ version: '10' }).setToken(TOKEN);
   try {
-    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
-    console.log('Slash commands registered.');
+    if (GUILD_ID) {
+      // Guild commands — appear instantly
+      await rest.put(Routes.applicationGuildCommands(appId, GUILD_ID), { body: commands });
+      console.log(`Slash commands registered to guild ${GUILD_ID}.`);
+    } else {
+      // Global commands — can take up to 1 hour to propagate
+      await rest.put(Routes.applicationCommands(appId), { body: commands });
+      console.log('Slash commands registered globally (may take up to 1 hour to appear).');
+    }
   } catch (err) {
     console.error('Failed to register commands:', err);
   }
